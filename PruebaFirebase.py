@@ -1,6 +1,6 @@
 import requests
-import firestore
-import credentials
+import json
+from google.cloud import firestore
 
 def hello_world(request):
     """Responds to any HTTP request.
@@ -11,26 +11,21 @@ def hello_world(request):
         Response object using
         `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
     """
-    # Use the application default credentials
-    cred = credentials.ApplicationDefault()
-    firebase_admin.initialize_app(cred, {
-    'projectId': 'proyecto-juan-lopez-dialogflow',
-    })
+    request_json = request.get_json()
     
-
-    db = firestore.client()
-
-    doc_ref = db.collection(u'Agenda').document(u'Citas')
-    	
+    RequestJson = request_json['queryResult']['outputContexts'][0]
+    
+    data = {
+        'Nombre Cliente':RequestJson['parameters']['given-name'],
+        'Documento':RequestJson['parameters']['Documento'],
+        'Dia_Cita':RequestJson['parameters']['date'],
+        'Hora_Cita':RequestJson['parameters']['time']
+    }
+    
+    # Add a new document
+    db = firestore.Client()
+    doc_ref = db.collection(u'users').document(str(RequestJson['parameters']['Documento']))
     doc_ref.set(data)
 
-    request_json = request.get_json()
-    var = request_json['queryResult']['outputContexts']
-    data = {
-        'Nombre Cliente':var['given-name'],
-        'Documento':var['Documento'],
-        'Dia_Cita':var['date'],
-        'Hora_Cita':var['time']
-    }
-    print(data)
-    return data
+    users_ref = db.collection(u'users').get()
+    print(type(users_ref))
